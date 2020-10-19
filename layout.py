@@ -6,8 +6,11 @@ dash_layout = html.Div([
     dcc.Location(id='url'),
     dbc.Card(
         dbc.CardBody([
-            dcc.Graph(id='map-plot',
-                      style={'height': '94vh'})
+            dbc.Spinner(
+                dcc.Graph(id='map-plot',
+                          style={'height': '94vh'}),
+                fullscreen=True
+            ),
         ]), style={'width': '50%',
                    'marginTop': 10, 'marginBottom': 10, 'marginRight': 10, 'marginLeft': 10}
     )
