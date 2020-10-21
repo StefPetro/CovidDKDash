@@ -1,5 +1,36 @@
 import json
+import zipfile as zp
+import re
 import pandas as pd
+
+archive = zp.ZipFile('Data-Epidemiologiske-Rapport-08102020-da23.zip', 'r')
+
+
+
+
+def cases_by_sex_processing():
+    # Open data in archive and load to dataframe
+    # use decimal=',' to avoid (european) thousand separator confusion
+    cases_by_sex_data = archive.open('Cases_by_sex.csv')
+    cases_by_sex = pd.read_csv(cases_by_sex_data, sep=';', decimal=',')
+
+    # Strip whitespace around strings and change columns names
+    cases_by_sex.columns = ['age_group', 'women', 'men', 'total']
+    cases_by_sex['total'] = cases_by_sex['total'].str.strip().str.replace('.', '').astype(int)
+    cases_by_sex['women'] = cases_by_sex['women'].str.strip().str.replace('.', '')
+    cases_by_sex['men'] = cases_by_sex['men'].str.strip().str.replace('.', '')
+
+    # Create two new columns from percent data in women and men columns
+    cases_by_sex['women_percent'] = cases_by_sex \
+        .apply(lambda x: re.sub('[()]', '', x['women'].split(' ')[1]) + '%', axis=1)
+    cases_by_sex['men_percent'] = cases_by_sex \
+        .apply(lambda x: re.sub('[()]', '', x['men'].split(' ')[1]) + '%', axis=1)
+
+    # Remove the percent parentheses in women and men columns
+    cases_by_sex['women'] = cases_by_sex.apply(lambda x: x['women'].split(' ')[0], axis=1).astype(int)
+    cases_by_sex['men'] = cases_by_sex.apply(lambda x: x['men'].split(' ')[0], axis=1).astype(int)
+
+    return cases_by_sex
 
 
 def geojson_convert_multipolygon(geojson_path, save_path):

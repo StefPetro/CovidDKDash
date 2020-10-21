@@ -3,12 +3,18 @@ import pandas as pd
 import json
 import zipfile as zp
 from urllib.request import urlopen
-import plotly.express as px
 from dash.dependencies import Output, Input, State
+
+# for plotting
+import plotly.express as px
+import plotly.graph_objects as go
 
 # import layout
 from layout import dash_layout
 
+# import preprocessing and plots
+from preprocessing import cases_by_sex_processing
+from plots import bar_cases_by_sex
 
 archive = zp.ZipFile('Data-Epidemiologiske-Rapport-08102020-da23.zip', 'r')
 
@@ -32,6 +38,9 @@ cases_sum_df = melt_cases.groupby('commune').sum().reset_index()
 cases_sum_df['code'] = cases_sum_df['commune'].map(muni_code_dict)
 cases_sum_df['code'] = cases_sum_df['code'].apply(lambda x: str(x).zfill(4))
 
+cases_by_sex = cases_by_sex_processing()
+
+
 with open('mapsGeoJSON/multipoly-kommuner.geojson', encoding='utf-8') as json_file:
     geojson = json.load(json_file)
 
@@ -40,6 +49,32 @@ port = 1337
 app = dash.Dash()
 app.title = 'Covid-19 Denmark Dashboard'
 app.layout = dash_layout
+
+
+@app.callback(
+    Output('top-select', 'options'),
+    [Input('url', 'pathname')]
+)
+def update_top_select(url):
+    options = [
+        {'label': 'Cases by sex for different age groups',
+         'value': bar_cases_by_sex(cases_by_sex)}
+    ]
+    return options
+
+
+@app.callback(
+    Output('top-stat-plot', 'figure'),
+    [Input('top-select', 'value')]
+)
+def update_top_plot(select):
+    # alternative solution
+    # less imports from different files
+    # if select == 'cases_by_sex':
+    #    return bar_cases_by_sex(cases_by_sex)
+    # elif ...
+
+    return select
 
 
 @app.callback(
@@ -54,8 +89,8 @@ def update_map_plot(url):
                                color_continuous_scale="Blues",
                                range_color=(0, 2500),
                                mapbox_style='carto-positron',
-                               center={'lat': 55.9397, 'lon': 11.3},  # 'lon': 9.5156
-                               zoom=5.6
+                               center={'lat': 55.9397, 'lon': 11.5},  # 'lon': 9.5156
+                               zoom=6.5  # 5.6
                                # scope='europe',
                                # projection="mercator",
                                )
