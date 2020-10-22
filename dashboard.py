@@ -86,11 +86,11 @@ def update_map_plot(url):
                                locations='code',
                                color='infected',
                                featureidkey="properties.KOMKODE",
-                               color_continuous_scale="Blues",
+                               color_continuous_scale="Inferno_r",
                                range_color=(0, 2500),
                                mapbox_style='carto-positron',
                                center={'lat': 55.9397, 'lon': 11.5},  # 'lon': 9.5156
-                               zoom=6.5  # 5.6
+                               zoom=5.6  # 5.6
                                # scope='europe',
                                # projection="mercator",
                                )

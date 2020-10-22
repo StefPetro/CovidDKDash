@@ -24,7 +24,7 @@ def bar_cases_by_sex(cases_by_sex):
     # Update the figure layout
     fig.update_layout(
         barmode='group',
-        margin={"r": 10, "t": 10, "l": 10, "b": 0},
+        #margin={"r": 10, "t": 10, "l": 10, "b": 0},
         # title_text='January 2013 Sales Report',
         hoverlabel={'font_size': 16},
         legend=dict(
