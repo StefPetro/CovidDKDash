@@ -8,7 +8,7 @@ from plots import bar_cases_by_sex
 cases_by_sex = cases_by_sex_processing()
 
 
-map_style = {'height': '97vh', 'marginTop': '1vh',
+map_style = {'height': '97vh', 'marginTop': '1vh', 'box-shadow': '2px 2px 2px lightgrey',
              'marginBottom': '1vh', 'marginRight': '0.5vh', 'marginLeft': '1vh'}
 top_style = {'height': '48vh', 'width': '99vh', 'marginTop': '1vh',
              'marginBottom': '0.5vh', 'marginRight': '1vh', 'marginLeft': '0.5vh'}
