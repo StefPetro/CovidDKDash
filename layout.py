@@ -23,9 +23,10 @@ dash_layout = html.Div([
             dbc.Card(
                 dbc.CardBody([
                     dcc.Graph(id='map-plot',
-                              style={'height': '100%'}
+                              style={'height': '100%'},
+                              config={"displayModeBar": False}
                               ),
-                ]), style=map_style
+                ]), style=map_style,
             )
         ),
 
@@ -37,7 +38,9 @@ dash_layout = html.Div([
                                    value=bar_cases_by_sex(cases_by_sex)
                                    ),
                         dcc.Graph(id='top-stat-plot',
-                                  style={'height': '100%'}),
+                                  #style={'height': '100%'},
+                                  config={"displayModeBar": False},
+                                  ),
                     ]), style=top_style
                 )
             ]),
@@ -46,7 +49,8 @@ dash_layout = html.Div([
                     dbc.CardBody([
                         dbc.Select(id='bottom-select'),
                         dcc.Graph(id='bottom-stat-plot',
-                                  style={'height': '100%'}),
+                                  #style={'height': '100%'}
+                                  ),
                     ]), style=bottom_style
                 ),
             ])
