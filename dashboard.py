@@ -50,6 +50,7 @@ app = dash.Dash()
 app.title = 'Covid-19 Denmark Dashboard'
 app.layout = dash_layout
 
+print(geojson)
 
 @app.callback(
     Output('top-select', 'options'),
@@ -82,7 +83,24 @@ def update_top_plot(select):
     [Input('url', 'pathname')]
 )
 def update_map_plot(url):
-    fig = px.choropleth_mapbox(cases_sum_df, geojson=geojson,
+
+    fig = go.Figure(
+        go.Choroplethmapbox(geojson=geojson,
+                            locations=cases_sum_df['code'],
+                            z=cases_sum_df['infected'],
+                            colorscale='Inferno_r',
+                            featureidkey="properties.KOMKODE",
+                            zmin=0,
+                            zmax=6500)
+    )
+
+    fig.update_layout(mapbox_style="carto-positron",
+                      mapbox_zoom=5.6,
+                      mapbox_center={'lat': 55.9397, 'lon': 11.5})
+
+    fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
+
+    '''fig = px.choropleth_mapbox(cases_sum_df, geojson=geojson,
                                locations='code',
                                color='infected',
                                featureidkey="properties.KOMKODE",
@@ -96,7 +114,7 @@ def update_map_plot(url):
                                )
     fig.update_geos(fitbounds="locations", visible=False)
     fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0},
-                      dragmode=False)
+                      dragmode=False)'''
     return fig
 
 
