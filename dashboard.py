@@ -13,32 +13,12 @@ import plotly.graph_objects as go
 from layout import dash_layout
 
 # import preprocessing and plots
-from preprocessing import cases_by_sex_processing
+from preprocessing import cases_by_sex_processing, cumulative_cases_by_municipality
 from plots import bar_cases_by_sex
 
-archive = zp.ZipFile('Data-Epidemiologiske-Rapport-08102020-da23.zip', 'r')
-
-muni_test_pos = 'Municipality_test_pos.csv'
-municipality_cases = 'Municipality_cases_time_series.csv'
-
-data = archive.open(muni_test_pos)
-test_df = pd.read_csv(data, sep=';')
-test_df['Kommune_(id)'] = test_df['Kommune_(id)'].astype(str)  # to str so we avoid floats
-muni_code_dict = pd.Series(test_df['Kommune_(id)'].values, index=test_df['Kommune_(navn)']).to_dict()
-muni_code_dict['Copenhagen'] = '101'
-
-cases_data = archive.open(municipality_cases)
-cases_df = pd.read_csv(cases_data, sep=';')
-melt_cases = pd.melt(cases_df,
-                     id_vars=['date_sample'],
-                     value_vars=cases_df.columns[1:],
-                     var_name=['commune'],
-                     value_name='infected')
-cases_sum_df = melt_cases.groupby('commune').sum().reset_index()
-cases_sum_df['code'] = cases_sum_df['commune'].map(muni_code_dict)
-cases_sum_df['code'] = cases_sum_df['code'].apply(lambda x: str(x).zfill(4))
-
+# Load the data
 cases_by_sex = cases_by_sex_processing()
+cumulative_cases = cumulative_cases_by_municipality()
 
 
 with open('mapsGeoJSON/multipoly-kommuner.geojson', encoding='utf-8') as json_file:
@@ -50,7 +30,6 @@ app = dash.Dash()
 app.title = 'Covid-19 Denmark Dashboard'
 app.layout = dash_layout
 
-print(geojson)
 
 @app.callback(
     Output('top-select', 'options'),
@@ -86,8 +65,10 @@ def update_map_plot(url):
 
     fig = go.Figure(
         go.Choroplethmapbox(geojson=geojson,
-                            locations=cases_sum_df['code'],
-                            z=cases_sum_df['infected'],
+                            locations=cumulative_cases['code'],
+                            z=cumulative_cases['infected'],
+                            text=cumulative_cases['municipality'],
+                            hovertemplate="Municipality: %{text} <br>Infected: %{z} <extra></extra>",
                             colorscale='Inferno_r',
                             featureidkey="properties.KOMKODE",
                             zmin=0,
@@ -96,25 +77,11 @@ def update_map_plot(url):
 
     fig.update_layout(mapbox_style="carto-positron",
                       mapbox_zoom=5.6,
-                      mapbox_center={'lat': 55.9397, 'lon': 11.5})
+                      mapbox_center={'lat': 55.9397, 'lon': 11.5},
+                      hoverlabel={'font_size': 16},)
 
     fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0})
 
-    '''fig = px.choropleth_mapbox(cases_sum_df, geojson=geojson,
-                               locations='code',
-                               color='infected',
-                               featureidkey="properties.KOMKODE",
-                               color_continuous_scale="Inferno_r",
-                               range_color=(0, 2500),
-                               mapbox_style='carto-positron',
-                               center={'lat': 55.9397, 'lon': 11.5},  # 'lon': 9.5156
-                               zoom=5.6  # 5.6
-                               # scope='europe',
-                               # projection="mercator",
-                               )
-    fig.update_geos(fitbounds="locations", visible=False)
-    fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0},
-                      dragmode=False)'''
     return fig
 
 

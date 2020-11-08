@@ -46,3 +46,20 @@ def bar_cases_by_sex(cases_by_sex):
 
     return fig
 
+
+
+'''fig = px.choropleth_mapbox(cases_sum_df, geojson=geojson,
+                               locations='code',
+                               color='infected',
+                               featureidkey="properties.KOMKODE",
+                               color_continuous_scale="Inferno_r",
+                               range_color=(0, 2500),
+                               mapbox_style='carto-positron',
+                               center={'lat': 55.9397, 'lon': 11.5},  # 'lon': 9.5156
+                               zoom=5.6  # 5.6
+                               # scope='europe',
+                               # projection="mercator",
+                               )
+    fig.update_geos(fitbounds="locations", visible=False)
+    fig.update_layout(margin={"r": 0, "t": 0, "l": 0, "b": 0},
+                      dragmode=False)'''
