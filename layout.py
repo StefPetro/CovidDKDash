@@ -3,58 +3,106 @@ import dash_core_components as dcc
 import dash_html_components as html
 
 from preprocessing import cases_by_sex_processing
-from plots import bar_cases_by_sex
+from plots import *
 
 cases_by_sex = cases_by_sex_processing()
 
 
-map_style = {'height': '97vh', 'marginTop': '1vh', 'box-shadow': '2px 2px 2px lightgrey',
+quick_style = {'marginTop': '1vh', 'marginBottom': '1vh', 'marginRight': '1vh', 'marginLeft': '1vh'}
+
+daily_style = {'marginBottom': '1vh', 'marginRight': '1vh', 'marginLeft': '1vh'}
+
+map_style = {'height': '80vh',
              'marginBottom': '1vh', 'marginRight': '0.5vh', 'marginLeft': '1vh'}
-top_style = {'height': '48vh', 'width': '99vh', 'marginTop': '1vh', 'box-shadow': '2px 2px 2px lightgrey',
-             'marginBottom': '0.5vh', 'marginRight': '1vh', 'marginLeft': '0.5vh'}
-bottom_style = {'height': '48vh', 'width': '99vh', 'marginTop': '0.5vh', 'box-shadow': '2px 2px 2px lightgrey',
-                'marginBottom': '1vh', 'marginRight': '1vh', 'marginLeft': '0.5vh'}
+
+stat_style = {'marginBottom': '1vh', 'marginRight': '1vh', 'marginLeft': '1vh'}
+
 
 dash_layout = html.Div([
     dcc.Location(id='url'),
 
-    dbc.Row([
-        dbc.Col(
-            dbc.Card(
-                dbc.CardBody([
-                    dcc.Graph(id='map-plot',
-                              style={'height': '100%'},
-                              config={"displayModeBar": False}
-                              ),
-                ]), style=map_style,
-            )
-        ),
-
-        dbc.Col([
-            dbc.Row([
+    dbc.Row(  # Quick overview
+        [
+            dbc.Col(
                 dbc.Card(
-                    dbc.CardBody([
-                        dbc.Select(id='top-select',
-                                   value=bar_cases_by_sex(cases_by_sex)
-                                   ),
-                        dcc.Graph(id='top-stat-plot',
-                                  #style={'height': '100%'},
-                                  config={"displayModeBar": False},
-                                  ),
-                    ]), style=top_style
+                    [
+                        dbc.CardHeader(
+                            dcc.Markdown('#### Total numbers since the 26th of February')
+                        ),
+                        dbc.CardBody(
+                            [
+                                dbc.Row(id='daily_info_columns')
+                            ]
+                        )
+                    ],
+                    style=quick_style
                 )
-            ]),
-            dbc.Row([
+            )
+        ],
+        no_gutters=True
+    ),
+
+    dbc.Row(  # The daily infected
+        [
+            dbc.Col(
+                dbc.Card(
+                    dbc.CardBody(
+                        [
+                            dcc.Graph(id='daily-plot',
+                                      config={"displayModeBar": False})
+                        ]
+                    ),
+                    style=daily_style
+                )
+            )
+        ],
+        no_gutters=True
+    ),
+
+    dbc.Row(  # Map of municipalities and plot the infections
+        [
+            dbc.Col(
                 dbc.Card(
                     dbc.CardBody([
-                        dbc.Select(id='bottom-select'),
-                        dcc.Graph(id='bottom-stat-plot',
-                                  #style={'height': '100%'}
+                        dcc.Graph(id='map-plot',
+                                  style={'height': '100%'},
+                                  config={"displayModeBar": False}
                                   ),
-                    ]), style=bottom_style
+                    ]), style=map_style,
                 ),
-            ])
-        ])
-    ]),
+                width=6
+            ),
+
+            dbc.Col(
+
+                width=6
+            )
+        ],
+        no_gutters=True
+    ),
+
+    dbc.Row(
+        [
+            dbc.Col(
+                dbc.Card(
+                    dbc.CardBody(
+                        [
+                            dbc.Select(id='stat-select',
+                                       value=bar_cases_by_sex(cases_by_sex)
+                                       ),
+
+                            dcc.Graph(id='stat-plot',
+                                      style={'height': '100%'},
+                                      config={"displayModeBar": False},
+                                      ),
+                        ]
+                    ),
+                    style=stat_style
+                ),
+                width='12'
+            ),
+        ],
+        no_gutters=True
+    ),
 
 ], className='dash-bootstrap')

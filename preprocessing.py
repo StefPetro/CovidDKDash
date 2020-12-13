@@ -3,7 +3,7 @@ import zipfile as zp
 import re
 import pandas as pd
 
-archive = zp.ZipFile('Data-Epidemiologiske-Rapport-08102020-da23.zip', 'r')
+archive = zp.ZipFile('data/data.zip', 'r')
 
 
 def cumulative_cases_by_municipality():
@@ -68,6 +68,19 @@ def cases_by_sex_processing():
     return cases_by_sex
 
 
+def daily_infected():
+    # Open the time series of cases for the municipalities
+    municipality_cases = 'Municipality_cases_time_series.csv'
+
+    cases_data = archive.open(municipality_cases)
+    cases_df = pd.read_csv(cases_data, sep=';')
+
+    total_daily = cases_df.groupby('date_sample').sum().sum(axis=1).values
+    cases_df['total_daily'] = total_daily
+
+    return cases_df
+
+
 def geojson_convert_multipolygon(geojson_path, save_path):
 
     # Open the geojson that hasn't been transformed to support multipolygons
@@ -82,7 +95,7 @@ def geojson_convert_multipolygon(geojson_path, save_path):
     }
 
     # Load the information csv that has been created and get the municipalities.
-    info_df = pd.read_csv('dk-municipalities-info.csv', sep=',', index_col=0)
+    info_df = pd.read_csv('data/dk-municipalities-info.csv', sep=',', index_col=0)
     municipalities = info_df.municipality.values
 
     # Loop through each municipality
@@ -138,4 +151,4 @@ def geojson_convert_multipolygon(geojson_path, save_path):
         json.dump(new_json, outfile, indent=4)
 
 
-# geojson_convert_multipolygon('mapsGeoJSON/dagi-500-kommuner.geojson', 'mapsGeoJSON/multipoly-kommuner.geojson')
+# geojson_convert_multipolygon('data/mapsGeoJSON/dagi-500-kommuner.geojson', 'data/mapsGeoJSON/multipoly-kommuner.geojson')

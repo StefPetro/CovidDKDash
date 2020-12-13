@@ -2,6 +2,7 @@
   <dictionary name="spetr">
     <words>
       <w>dataframe</w>
+      <w>lightgrey</w>
       <w>muni</w>
     </words>
   </dictionary>
