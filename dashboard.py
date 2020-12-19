@@ -5,6 +5,7 @@ import zipfile as zp
 from urllib.request import urlopen
 
 from dash.dependencies import Output, Input, State
+from dash.exceptions import PreventUpdate
 import dash_core_components as dcc
 import dash_bootstrap_components as dbc
 
@@ -15,13 +16,11 @@ import plotly.graph_objects as go
 # import layout
 from layout import dash_layout
 
-# import preprocessing and plots
-from preprocessing import *
-from plots import bar_cases_by_sex
+# import plots
+from plots import *
 
 # Load the data
-cases_by_sex = cases_by_sex_processing()
-cumulative_cases = cumulative_cases_by_municipality()
+cumulative_cases = municipality_cumulative_cases_data()
 
 
 with open('data/mapsGeoJSON/multipoly-kommuner.geojson', encoding='utf-8') as json_file:
@@ -35,29 +34,21 @@ app.layout = dash_layout
 
 
 @app.callback(
-    Output('stat-select', 'options'),
-    [Input('url', 'pathname')]
-)
-def update_stat_select(url):
-    options = [
-        {'label': 'Cases by sex for different age groups',
-         'value': bar_cases_by_sex(cases_by_sex)}
-    ]
-    return options
-
-
-@app.callback(
     Output('stat-plot', 'figure'),
     [Input('stat-select', 'value')]
 )
 def update_stat_plot(select):
-    # alternative solution
-    # less imports from different files
-    # if select == 'cases_by_sex':
-    #    return bar_cases_by_sex(cases_by_sex)
-    # elif ...
 
-    return select
+    if select == 'daily_infected':
+        return daily_infected()
+    elif select == 'cases_by_sex':
+        return cases_by_sex()
+    elif select == 'deaths_over_time':
+        return deaths_over_time()
+    elif select == 'cumulative_deaths':
+        return cumulative_deaths()
+
+    raise PreventUpdate
 
 
 @app.callback(
@@ -67,7 +58,7 @@ def update_stat_plot(select):
 def update_daily_info(url):
     columns = []
 
-    total_cases = daily_cases = daily_infected().iloc[:-1, -1].sum()
+    total_cases = daily_cases = daily_infected_data().iloc[:-1, -1].sum()
 
     columns.append(
         dbc.Col(
@@ -83,30 +74,27 @@ def update_daily_info(url):
     return columns
 
 
+
+
 @app.callback(
-    Output('daily-plot', 'figure'),
+    Output('municipality-plot', 'figure'),
     [Input('url', 'pathname')]
 )
-def update_daily_plot(url):
-    daily_cases = daily_infected().iloc[:-1, :]
+def update_municipality_plot(url):
+    muni_infected = municipality_infected_data()
+
+    # Showing top 20
+    muni_infected = muni_infected.iloc[:20, :].sort_values('infected', ascending=True)
 
     fig = go.Figure(
         go.Bar(
-            x=daily_cases['date_sample'],
-            y=daily_cases['total_daily'],
-            hovertemplate="Date: %{x} <br>Infected: %{y} <extra></extra>",
+            x=muni_infected.infected.values,  # Switch x and y values to get horizontal plot
+            y=muni_infected.index,
+            orientation='h',
         )
     )
 
-    fig.update_layout(
-        title_text='Daily infected in Denmark',
-        yaxis=dict(
-            title='Infected'
-        ),
-        margin={"r": 10, "t": 50, "l": 10, "b": 20},
-    )
     return fig
-
 
 
 @app.callback(

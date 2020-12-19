@@ -6,7 +6,7 @@ import pandas as pd
 archive = zp.ZipFile('data/data.zip', 'r')
 
 
-def cumulative_cases_by_municipality():
+def municipality_cumulative_cases_data():
 
     # Open det test csv for municipalities to create a dictionary for the municipalities and their codes.
     muni_test_pos = 'Municipality_test_pos.csv'
@@ -43,32 +43,32 @@ def cumulative_cases_by_municipality():
     return cases_sum_df
 
 
-def cases_by_sex_processing():
+def cases_by_sex_data():
     # Open data in archive and load to dataframe
     # use decimal=',' to avoid (european) thousand separator confusion
-    cases_by_sex_data = archive.open('Cases_by_sex.csv')
-    cases_by_sex = pd.read_csv(cases_by_sex_data, sep=';', decimal=',')
+    cases_by_sex = archive.open('Cases_by_sex.csv')
+    cases_by_sex_df = pd.read_csv(cases_by_sex, sep=';', decimal=',')
 
     # Strip whitespace around strings and change columns names
-    cases_by_sex.columns = ['age_group', 'women', 'men', 'total']
-    cases_by_sex['total'] = cases_by_sex['total'].str.strip().str.replace('.', '').astype(int)
-    cases_by_sex['women'] = cases_by_sex['women'].str.strip().str.replace('.', '')
-    cases_by_sex['men'] = cases_by_sex['men'].str.strip().str.replace('.', '')
+    cases_by_sex_df.columns = ['age_group', 'women', 'men', 'total']
+    cases_by_sex_df['total'] = cases_by_sex_df['total'].str.strip().str.replace('.', '').astype(int)
+    cases_by_sex_df['women'] = cases_by_sex_df['women'].str.strip().str.replace('.', '')
+    cases_by_sex_df['men'] = cases_by_sex_df['men'].str.strip().str.replace('.', '')
 
     # Create two new columns from percent data in women and men columns
-    cases_by_sex['women_percent'] = cases_by_sex \
+    cases_by_sex_df['women_percent'] = cases_by_sex_df \
         .apply(lambda x: re.sub('[()]', '', x['women'].split(' ')[1]) + '%', axis=1)
-    cases_by_sex['men_percent'] = cases_by_sex \
+    cases_by_sex_df['men_percent'] = cases_by_sex_df \
         .apply(lambda x: re.sub('[()]', '', x['men'].split(' ')[1]) + '%', axis=1)
 
     # Remove the percent parentheses in women and men columns
-    cases_by_sex['women'] = cases_by_sex.apply(lambda x: x['women'].split(' ')[0], axis=1).astype(int)
-    cases_by_sex['men'] = cases_by_sex.apply(lambda x: x['men'].split(' ')[0], axis=1).astype(int)
+    cases_by_sex_df['women'] = cases_by_sex_df.apply(lambda x: x['women'].split(' ')[0], axis=1).astype(int)
+    cases_by_sex_df['men'] = cases_by_sex_df.apply(lambda x: x['men'].split(' ')[0], axis=1).astype(int)
 
-    return cases_by_sex
+    return cases_by_sex_df
 
 
-def daily_infected():
+def daily_infected_data():
     # Open the time series of cases for the municipalities
     municipality_cases = 'Municipality_cases_time_series.csv'
 
@@ -81,74 +81,47 @@ def daily_infected():
     return cases_df
 
 
-def geojson_convert_multipolygon(geojson_path, save_path):
+def municipality_infected_data():
+    # Open the time series of cases for the municipalities
+    municipality_cases = 'Municipality_cases_time_series.csv'
 
-    # Open the geojson that hasn't been transformed to support multipolygons
-    with open(geojson_path, encoding='utf-8') as json_file:
-        old_json = json.load(json_file)
+    cases_data = archive.open(municipality_cases)
+    cases_df = pd.read_csv(cases_data, sep=';')
 
-    # Create a new JSON by looking at what the old includes.
-    new_json = {
-        'type': old_json['type'],
-        'crs': old_json['crs'],
-        'features': []
-    }
+    # Melt the dataframe to get three columns, one for date, municipality, and cases.
+    melt_cases = pd.melt(cases_df,
+                         id_vars=['date_sample'],
+                         value_vars=cases_df.columns[1:],
+                         var_name=['municipality'],
+                         value_name='infected')
 
-    # Load the information csv that has been created and get the municipalities.
-    info_df = pd.read_csv('data/dk-municipalities-info.csv', sep=',', index_col=0)
-    municipalities = info_df.municipality.values
+    mask = melt_cases['municipality'].isin(['NA'])
+    melt_cases = melt_cases.loc[~mask, :]  # Makes sure that NA is not included as a municipality
+    muni_infected = melt_cases.groupby('municipality').sum().sort_values('infected', ascending=False)
 
-    # Loop through each municipality
-    for muni in municipalities:
-        # Set a flag that indicate if the municipality have been found
-        found = False  # first time
-        multi = False  # more than once
-
-        # Going through all features in the old geojson
-        for feat in old_json['features']:
-
-            # If a municipality is found for the first time
-            if not found and muni == feat['properties']['KOMNAVN']:
-
-                # Add the feature for the municipality
-                new_json['features'].append({'type': "Feature",
-                                             'properties': {'REGIONKODE': feat['properties']['REGIONKODE'],
-                                                            'REGIONNAVN': feat['properties']['REGIONNAVN'],
-                                                            'KOMKODE': feat['properties']['KOMKODE'],
-                                                            'KOMNAVN': feat['properties']['KOMNAVN']},
-                                             'geometry': {'type': 'Polygon',
-                                                          'coordinates': []}
-                                             })
-                # And add the geometry
-                new_json['features'][-1]['geometry']['coordinates'] = feat['geometry']['coordinates']
-                found = True  # Update flag to true
-
-            # If municipality is found
-            elif found and muni == feat['properties']['KOMNAVN']:
-                # If it is the second time it is found
-                if not multi:
-                    # Change the geometry type to multipolygon
-                    new_json['features'][-1]['geometry']['type'] = 'MultiPolygon'
-
-                    # Get the current coordinates and make a list around them
-                    current = new_json['features'][-1]['geometry']['coordinates']
-                    new_json['features'][-1]['geometry']['coordinates'] = [current]
-
-                    # Append the addiontal coordinates to this list
-                    new_json['features'][-1]['geometry']['coordinates'].append(feat['geometry']['coordinates'])
-                    multi = True  # Update flag
-                # If found more than twice
-                elif multi:
-                    # Append the new coordinates
-                    new_json['features'][-1]['geometry']['coordinates'].append(feat['geometry']['coordinates'])
-
-        # If the municipality is never found, print its name for debugging
-        if not found:
-            print(f'The municipality {muni} wasn\'t found in the geojson')
-
-    # Save the new geojson
-    with open(save_path, 'w') as outfile:
-        json.dump(new_json, outfile, indent=4)
+    return muni_infected
 
 
-# geojson_convert_multipolygon('data/mapsGeoJSON/dagi-500-kommuner.geojson', 'data/mapsGeoJSON/multipoly-kommuner.geojson')
+def deaths_over_time_data():
+    deaths_over_time = 'Deaths_over_time.csv'
+    deaths_data = archive.open(deaths_over_time)
+    deaths_df = pd.read_csv(deaths_data, sep=';')
+    deaths_df.columns = ['date', 'deaths']
+    deaths_df = deaths_df.iloc[:-1, :]  # Remove the 'total' row
+
+    return deaths_df
+
+
+def deaths_cumulative_data():
+    deaths_over_time = 'Deaths_over_time.csv'
+    deaths_data = archive.open(deaths_over_time)
+    deaths_df = pd.read_csv(deaths_data, sep=';')
+    deaths_df.columns = ['date', 'deaths']
+    deaths_df = deaths_df.iloc[:-1, :]  # Remove the 'total' row
+
+    deaths_df = deaths_df.set_index('date')
+    deaths_df = deaths_df.cumsum()
+
+    return deaths_df
+
+
