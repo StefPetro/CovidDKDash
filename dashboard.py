@@ -1,18 +1,9 @@
 import dash
-import pandas as pd
-import json
-import zipfile as zp
-from urllib.request import urlopen
 
 from dash.dependencies import Output, Input, State
 from dash.exceptions import PreventUpdate
 import dash_core_components as dcc
 import dash_bootstrap_components as dbc
-import dash_html_components as html
-
-# for plotting
-import plotly.express as px
-import plotly.graph_objects as go
 
 # import layout
 from layout import dash_layout
@@ -28,10 +19,12 @@ with open('data/mapsGeoJSON/multipoly-kommuner.geojson', encoding='utf-8') as js
     geojson = json.load(json_file)
 
 
-port = 1337
-app = dash.Dash()
+# port = 1337
+app = dash.Dash(__name__, suppress_callback_exceptions=True)
 app.title = 'Covid-19 Denmark Dashboard'
 app.layout = dash_layout
+
+server = app.server
 
 
 @app.callback(
@@ -156,4 +149,4 @@ def update_map_plot(url):
 
 
 if __name__ == "__main__":
-    app.run_server(debug=True, port=port)
+    app.run_server(debug=True)
