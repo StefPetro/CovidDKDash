@@ -104,9 +104,10 @@ def daily_tests_accumulated():
     tests_df['NewPositive'] = tests_df['NewPositive'].str.strip().str.replace('.', '').astype(int)
     tests_df['Tested'] = tests_df['Tested'].str.strip().str.replace('.', '').astype(int)
 
+    total_tests = tests_df.iloc[-2, :]
     total = tests_df.iloc[-1, :]
 
-    return total['Tested'], total['NotPrevPos'], total['NewPositive']
+    return total_tests['Tested'], total['NotPrevPos'], total['NewPositive']
 
 
 def daily_infected_percent_data():
