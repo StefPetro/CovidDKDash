@@ -5,10 +5,16 @@ import dash_html_components as html
 from plots import *
 
 stat_select_options = [
-    {'label': 'Daily infected',
+    {'label': 'Daily number of infected',
      'value': 'daily_infected'},
+    {'label': 'Daily number of tests',
+     'value': 'daily_tests'},
+    {'label': 'Daily percent of positive tests',
+     'value': 'daily_percent'},
     {'label': 'Cases by sex for different age groups',
      'value': 'cases_by_sex'},
+    {'label': 'Admitted to hospitals per day',
+     'value': 'admitted_over_time'},
     {'label': 'Deaths over time',
      'value': 'deaths_over_time'},
     {'label': 'Cumulative deaths since March 11th',
@@ -36,10 +42,15 @@ nav_links = dbc.Row(
                 dbc.Button("Data source", color="light", outline=True),
                 href='https://covid19.ssi.dk/overvagningsdata/download-fil-med-overvaagningdata',
                 target='_blank',
-                className="ml-2"
             ),
-            width='auto'
-        )
+            width='auto',
+            className="ml-2"
+        ),
+        dbc.Col(
+            dbc.Button("Download data", color="light", outline=True, disabled=True),
+            width='auto',
+            className='ml-2'
+        ),
     ],
     no_gutters=True,
     # className="ml-auto flex-nowrap mt-3 mt-md-0",  # Move links to the left in nav bar
@@ -76,7 +87,7 @@ dash_layout = html.Div([
                 dbc.Card(
                     [
                         dbc.CardHeader(
-                            dcc.Markdown('#### Total numbers since the 26th of February')
+                            dcc.Markdown('#### Total numbers since February 26th 2020')
                         ),
                         dbc.CardBody(
                             [
@@ -97,10 +108,11 @@ dash_layout = html.Div([
                 dbc.Card(
                     dbc.CardBody(
                         [
-                            dbc.Select(id='stat-select',
-                                       options=stat_select_options,
-                                       value='daily_infected'
-                                       ),
+                            dcc.Dropdown(id='stat-select',
+                                         options=stat_select_options,
+                                         value='daily_infected',
+                                         clearable=False,
+                                         ),
                             dcc.Loading(
                                 dcc.Graph(id='stat-plot',
                                           config={"displayModeBar": False}),

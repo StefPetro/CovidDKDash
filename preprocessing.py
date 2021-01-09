@@ -81,6 +81,58 @@ def daily_infected_data():
     return cases_df
 
 
+def daily_tests_data():
+    # Open the time series of tests over time
+    municipality_tests = 'Test_pos_over_time.csv'
+
+    tests_data = archive.open(municipality_tests)
+    tests_df = pd.read_csv(tests_data, sep=';')
+    tests_df = tests_df.iloc[:-2, :]
+
+    tests_df['Tested'] = tests_df['Tested'].str.strip().str.replace('.', '').astype(int)
+
+    return tests_df
+
+
+def daily_tests_accumulated():
+    # Open the time series of tests over time
+    municipality_tests = 'Test_pos_over_time.csv'
+
+    tests_data = archive.open(municipality_tests)
+    tests_df = pd.read_csv(tests_data, sep=';', decimal=',')
+    tests_df['NotPrevPos'] = tests_df['NotPrevPos'].str.strip().str.replace('.', '').astype(int)
+    tests_df['NewPositive'] = tests_df['NewPositive'].str.strip().str.replace('.', '').astype(int)
+    tests_df['Tested'] = tests_df['Tested'].str.strip().str.replace('.', '').astype(int)
+
+    total = tests_df.iloc[-1, :]
+
+    return total['Tested'], total['NotPrevPos'], total['NewPositive']
+
+
+def daily_infected_percent_data():
+    municipality_tested = 'Municipality_tested_persons_time_series.csv'
+
+    municipality_tested_data = archive.open(municipality_tested)
+    municipality_tested_df = pd.read_csv(municipality_tested_data, sep=';')
+
+    total_daily = municipality_tested_df.groupby('PrDate_adjusted').sum().sum(axis=1).values
+    municipality_tested_df['total_daily'] = total_daily
+    municipality_tested_df = municipality_tested_df.iloc[:, [0, -1]]
+    municipality_tested_df = municipality_tested_df.iloc[21:, :].reset_index(drop=True)  # Start from march 1st
+
+    cases_df = daily_infected_data()  # Get cases from other function
+    cases_df = cases_df.iloc[3:, [0, -1]]  # Start from march 1st
+
+    percent_df = pd.DataFrame()
+    percent_df['date_sample'] = cases_df['date_sample']
+    percent_df['percent_positive'] = cases_df['total_daily'].values/municipality_tested_df['total_daily'].values * 100
+
+    # Last value is not correct as all data is not up to date yet
+    percent_df = percent_df.iloc[:-1, :]
+
+    return percent_df
+
+
 def municipality_infected_data():
     # Open the time series of cases for the municipalities
     municipality_cases = 'Municipality_cases_time_series.csv'
@@ -100,6 +152,15 @@ def municipality_infected_data():
     muni_infected = melt_cases.groupby('municipality').sum().sort_values('infected', ascending=False)
 
     return muni_infected
+
+
+def admitted_over_time_data():
+    admitted_over_time = 'Newly_admitted_over_time.csv'
+    admitted_data = archive.open(admitted_over_time)
+    admitted_df = pd.read_csv(admitted_data, sep=';')
+    admitted_df = admitted_df.iloc[:, [0, -1]]
+
+    return admitted_df
 
 
 def deaths_over_time_data():

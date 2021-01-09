@@ -8,6 +8,7 @@ from dash.dependencies import Output, Input, State
 from dash.exceptions import PreventUpdate
 import dash_core_components as dcc
 import dash_bootstrap_components as dbc
+import dash_html_components as html
 
 # for plotting
 import plotly.express as px
@@ -41,8 +42,14 @@ def update_stat_plot(select):
 
     if select == 'daily_infected':
         return daily_infected()
+    elif select == 'daily_tests':
+        return daily_tests()
+    elif select == 'daily_percent':
+        return daily_percent()
     elif select == 'cases_by_sex':
         return cases_by_sex()
+    elif select == 'admitted_over_time':
+        return admitted_over_time()
     elif select == 'deaths_over_time':
         return deaths_over_time()
     elif select == 'cumulative_deaths':
@@ -58,22 +65,29 @@ def update_stat_plot(select):
 def update_daily_info(url):
     columns = []
 
-    total_cases = daily_cases = daily_infected_data().iloc[:-1, -1].sum()
+    info = {
+        'Total tests': daily_tests_accumulated()[0],
+        'Tested persons': daily_tests_accumulated()[1],
+        'Confirmed cases': daily_tests_accumulated()[2],
+        'Deaths': deaths_cumulative_data().iloc[-1, 0],
+        'Total admitted': admitted_over_time_data().iloc[:-1, -1].sum(),
+    }
 
-    columns.append(
-        dbc.Col(
-            dcc.Markdown(
-                f'''
-                Confirmed cases:  
-                {total_cases}
-                '''
+    for key, val in info.items():
+        columns.append(
+            dbc.Col(
+                dcc.Markdown(
+                    f'''
+                        ##### {key}:
+
+                        # {val:,}
+                        ''',
+                    style={'text-align': 'center'}
+                )
             )
         )
-    )
 
     return columns
-
-
 
 
 @app.callback(
@@ -91,7 +105,13 @@ def update_municipality_plot(url):
             x=muni_infected.infected.values,  # Switch x and y values to get horizontal plot
             y=muni_infected.index,
             orientation='h',
+            hovertemplate="Municipality: %{y} <br>Infected: %{x} <extra></extra>",
         )
+    )
+
+    fig.update_layout(
+        title_text='Top 20 most infected municipalities',
+        margin={"r": 0, "l": 0, "b": 0}
     )
 
     return fig
